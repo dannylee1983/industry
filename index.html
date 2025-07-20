@@ -25,15 +25,7 @@
     .genre-electric-pink { border-color: #ff69b4; }
     .genre-tech { border-color: #800080; }
     .genre-hard { border-color: #ff6600; }
-    .item img {
-      width: 160px;
-      height: 160px;
-	 max-width: 160px !important;
-  max-height: 160px !important;
-      object-fit: cover;
-      border-radius: 6px;
-      flex-shrink: 0;
-    }
+
     .item-details { flex: 1; }
     .item-details h3 {
       margin: 0 0 5px;
@@ -73,6 +65,21 @@
       border: none;
       border-radius: 6px;
     }
+
+	.image-wrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}	 
+
 .genre-tag {
   position: absolute;
   top: 10px;
@@ -99,30 +106,33 @@
 
 @media (max-width: 768px) {
   .item {
-    flex-direction: column;
+    flex-direction: column; /* Stack items vertically */
   }
 
   .player-container {
-    order: -1;
-    width: 100% !important;
-    margin-bottom: 10px;
-    box-sizing: border-box;
+    order: -1; /* Move the player container above the image */
+    width: 100%; /* Ensure it takes full width */
+    margin-bottom: 10px; /* Add spacing below the player */
     padding-right: 10px;
+    box-sizing: border-box;
   }
 
-  .item img {
-    width: 100%;
-	max-width: 160px;
-    height: auto;
-    margin-bottom: 10px;
-    object-fit: cover;
-    border-radius: 6px;
-    flex-shrink: 0;
+  /* Make the image scale responsively */
+  .image-wrapper {
+    width: 100%; /* Ensure wrapper scales to 100% */
+    height: auto; /* Keep the height proportional */
   }
 
-  .player-container audio {
-    width: 100% !important;
-    max-width: 100%;
+  .image-wrapper img {
+    width: 100%; /* Full width of the wrapper */
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 6px; /* Ensure image has rounded corners */
+  }
+
+  /* Scale audio player and YouTube iframe */
+  .player-container audio, .player-container iframe {
+    width: 100% !important; /* Ensure audio and iframe use full width */
+    height: auto; /* Adjust iframe height if needed */
   }
 }
 .view-all-btn {
@@ -197,8 +207,10 @@ from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry@main/Shared_Logic/produc
       const div = document.createElement('div');
 div.className = 'item' + genreClass(p.genre);
 div.innerHTML = `
-  <div class="genre-tag">${p.genre}</div>
-  <img src="${p.artwork}" alt="${p.track}" />
+  <div class="image-wrapper">
+    <img src="${p.artwork}" alt="${p.track}" />
+    <div class="genre-tag">${p.genre}</div>
+  </div>
   <div class="item-details">
     <h3>${p.artist} – ${p.track}</h3>
     <p><strong>Version:</strong> ${p.version}</p>
@@ -213,7 +225,6 @@ div.innerHTML = `
     <iframe id="youtube-player-${p.id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
   </div>
 `;
-
       div.querySelector('button').addEventListener('click', () => play(products, p));
 
       container.appendChild(div);
