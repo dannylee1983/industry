@@ -13,13 +13,13 @@ export async function loadProducts() {
 }
 
 export function genreClass(genre) {
-  switch (genre) {
-    case 'Electric Blue': return 'genre-electric-blue';
-    case 'Electric Pink': return 'genre-electric-pink';
-    case 'Tech': return 'genre-tech';
-    case 'Hard': return 'genre-hard';
-    default: return '';
-  }
+  const genreMap = {
+    'Electric Blue': 'genre-electric-blue',
+    'Electric Pink': 'genre-electric-pink',
+    'Tech': 'genre-tech',
+    'Hard': 'genre-hard',
+  };
+  return genreMap[genre] || '';
 }
 
 export function isNewRelease(dateStr) {
