@@ -144,9 +144,11 @@
 <a href="https://industry-music.com/music" target="_top" class="button view-all-btn">View All Products</a>
 
 <!-- ✅ Load your GitHub JS module from jsDelivr -->
+
 <script type="module">
-import { loadProducts, isNewRelease, isComingSoon, play } 
-from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry@main/Shared_Logic/productLogic.js?v=5';
+
+import { loadProducts, isNewRelease, isComingSoon, play, genreClass } 
+from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry@main/Shared_Logic/productLogic.js?v=6';
   let products = [];
 
   async function init() {
@@ -183,9 +185,9 @@ from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry@main/Shared_Logic/produc
       const selectBtnHtml = comingSoon ? '' : `<a href="${p.link}" target="_blank" class="button">Select</a>`;
 
       const div = document.createElement('div');
-div.className = 'item'; // + genreClass(p.genre);
+div.className = 'item' + genreClass(p.genre);
 div.innerHTML = `
-  <!-- <div class="genre-tag">${p.genre}</div> -->
+  <div class="genre-tag">${p.genre}</div>
   <img src="${p.artwork}" alt="${p.track}" />
   <div class="item-details">
     <h3>${p.artist} – ${p.track}</h3>
