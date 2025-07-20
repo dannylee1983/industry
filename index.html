@@ -145,14 +145,8 @@
 
 <!-- ✅ Load your GitHub JS module from jsDelivr -->
 <script type="module">
-  import {
-    loadProducts,
-    genreClass,
-    isNewRelease,
-    isComingSoon,
-    play
-  } from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry/Shared_Logic/productLogic.js';
-
+import { loadProducts, isNewRelease, isComingSoon, play } 
+from 'https://cdn.jsdelivr.net/gh/dannylee1983/industry@main/Shared_Logic/productLogic.js?v=5';
   let products = [];
 
   async function init() {
@@ -189,24 +183,24 @@
       const selectBtnHtml = comingSoon ? '' : `<a href="${p.link}" target="_blank" class="button">Select</a>`;
 
       const div = document.createElement('div');
-      div.className = 'item ' + genreClass(p.genre);
-      div.innerHTML = `
-        <div class="genre-tag">${p.genre}</div>
-        <img src="${p.artwork}" alt="${p.track}" />
-        <div class="item-details">
-          <h3>${p.artist} – ${p.track}</h3>
-          <p><strong>Version:</strong> ${p.version}</p>
-          <p><strong>BPM:</strong> ${p.bpm || '–'}</p>
-          <p><strong>Price:</strong> ${p.price}</p>
-          <p><strong>Release Date:</strong> ${p.releaseDate || '–'} ${releaseLabel}</p>
-          <button data-id="${p.id}">Play Sample</button>
-          ${selectBtnHtml}
-        </div>
-        <div class="player-container">
-          <audio id="audio-player-${p.id}" controls></audio>
-          <iframe id="youtube-player-${p.id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        </div>
-      `;
+div.className = 'item'; // + genreClass(p.genre);
+div.innerHTML = `
+  <!-- <div class="genre-tag">${p.genre}</div> -->
+  <img src="${p.artwork}" alt="${p.track}" />
+  <div class="item-details">
+    <h3>${p.artist} – ${p.track}</h3>
+    <p><strong>Version:</strong> ${p.version}</p>
+    <p><strong>BPM:</strong> ${p.bpm || '–'}</p>
+    <p><strong>Price:</strong> ${p.price}</p>
+    <p><strong>Release Date:</strong> ${p.releaseDate || '–'} ${releaseLabel}</p>
+    <button data-id="${p.id}">Play Sample</button>
+    ${selectBtnHtml}
+  </div>
+  <div class="player-container">
+    <audio id="audio-player-${p.id}" controls></audio>
+    <iframe id="youtube-player-${p.id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+`;
 
       div.querySelector('button').addEventListener('click', () => play(products, p));
 
