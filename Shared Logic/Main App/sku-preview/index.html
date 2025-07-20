@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SKU Preview Player</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Source Sans Pro', sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    #search-box, #genre-filter {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
+    #search-box {
+      flex: 1;
+    }
+    .item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      border: 2px solid transparent;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background: #222;
+      transition: border-color 0.3s ease;
+    }
+    .genre-electric-blue {
+      border-color: #00aaff; /* Sky Blue */
+    }
+    .genre-electric-pink {
+      border-color: #ff69b4; /* Pink */
+    }
+    .genre-tech {
+      border-color: #800080; /* Purple */
+    }
+    .genre-hard {
+      border-color: #ff6600; /* Orange */
+    }
+    .item img {
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .item-details {
+      flex: 1;
+    }
+    .item-details h3 {
+      margin: 0 0 5px;
+      font-weight: 600;
+      font-size: 20px;
+    }
+    .item-details p {
+      margin: 4px 0;
+      font-size: 15px;
+      color: #ccc;
+    }
+    button, .button {
+      padding: 8px 14px;
+      margin-top: 10px;
+      background: #1e90ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, .button:hover {
+      background: #0c67d1;
+    }
+    .player-container {
+      width: 360px;
+      flex-shrink: 0;
+    }
+    #audio-player {
+      width: 100%;
+      display: none;
+      margin-bottom: 10px;
+    }
+    iframe {
+      width: 100%;
+      height: 200px;
+      display: none;
+      border: none;
+      border-radius: 6px;
+    }
+.genre-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #444;
+  color: #fff;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+.genre-electric-blue .genre-tag { background: #00aaff; }
+.genre-electric-pink .genre-tag { background: #ff69b4; }
+.genre-tech .genre-tag { background: #800080; }
+.genre-hard .genre-tag { background: #ff6600; }
+
+.item {
+  position: relative;
+}
+@media (max-width: 768px) {
+  .item {
+    flex-direction: column;  /* stack vertically */
+  }
+
+@media (max-width: 600px) {
+  #filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #search-box,
+  #genre-filter {
+    width: 100%;
+  }
+}
+
+  .player-container {
+    order: -1;  /* show player container first in .item */
+    width: 100% !important; /* full width on mobile */
+    margin-bottom: 10px;
+  }
+
+  .item img {
+    width: 100%;  /* smaller, full width */
+    height: auto;
+    margin-bottom: 10px;
+  }
+  .player-container {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding-right: 10px;
+  }
+
+  .player-container audio {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <h1>Track Preview</h1>
+  <div id="filters">
+    <input type="text" id="search-box" placeholder="Search tracks..." />
+    <select id="genre-filter">
+      <option value="">All Genres</option>
+      <option value="Electric Blue">Electric Blue</option>
+      <option value="Electric Pink">Electric Pink</option>
+      <option value="Tech">Tech</option>
+      <option value="Hard">Hard</option>
+    </select>
+  </div>
+
+  <div id="product-list"></div>
+
+  <script>
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOkoLqcOywo_NTtJ4klohydC310Ak6tzu3twz_hP7i2QzQZaMGJgLPOS7nqrIrQm2SFQIHBOv0OiSK/pub?gid=0&single=true&output=csv';
+    
+    let products = [];
+
+    async function loadProducts() {
+      const res = await fetch(sheetUrl);
+      const text = await res.text();
+      const rows = text.trim().split('\n').slice(1);
+      products = rows.map(r => {
+        const [id, artist, track, version, artwork, youtube, audio, price, link, releaseDate, genre, bpm] = r.split(',');
+        return { id, artist, track, version, artwork, youtube, audio, price, link, releaseDate, genre, bpm };
+      });
+      displayProducts(products);
+    }
+
+    // Maps genre to CSS class for border color
+    function genreClass(genre) {
+      switch(genre) {
+        case 'Electric Blue': return 'genre-electric-blue';
+        case 'Electric Pink': return 'genre-electric-pink';
+        case 'Tech': return 'genre-tech';
+        case 'Hard': return 'genre-hard';
+        default: return '';
+      }
+    }
+
+    function displayProducts(items) {
+      const container = document.getElementById('product-list');
+      container.innerHTML = '';
+      items.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'item ' + genreClass(p.genre);
+div.innerHTML = `
+  <div class="genre-tag">${p.genre}</div>
+  <img src="${p.artwork}" alt="${p.track}" />
+  <div class="item-details">
+    <h3>${p.artist} – ${p.track}</h3>
+    <p><strong>Version:</strong> ${p.version}</p>
+
+<p><strong>BPM:</strong> ${p.bpm || '–'}</p>
+    <p><strong>Price:</strong> ${p.price}</p>
+
+<p><strong>Release Date:</strong> ${p.releaseDate || '–'}
+  ${
+    isNewRelease(p.releaseDate)
+      ? '<strong style="color: #0f0;">NEW RELEASE</strong>'
+      : isComingSoon(p.releaseDate)
+      ? '<strong style="color: #ff0;">COMING SOON</strong>'
+      : ''
+  }
+</p>
+
+<button data-id="${p.id}">Play Sample</button>
+${isReleased(p.releaseDate) ? `
+  <a href="${p.link}" target="_blank" class="button">Select</a>
+` : ''}
+  </div>
+  <div class="player-container">
+    <audio id="audio-player-${p.id}" class="preview-player" controls style="display: none;"></audio>
+    <iframe id="youtube-player-${p.id}" class="preview-player" style="display: none;" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+`;   
+ const playBtn = div.querySelector('button');
+        playBtn.addEventListener('click', () => play(p));
+        container.appendChild(div);
+      });
+    }
+function isNewRelease(dateStr) {
+  if (!dateStr) return false;
+  const [day, month, year] = dateStr.split('/');
+  const releaseDate = new Date(`20${year}`, month - 1, day);
+  const today = new Date();
+  releaseDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  const diffDays = (today - releaseDate) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 13;
+}
+function isComingSoon(dateStr) {
+  if (!dateStr) return false;
+  const [day, month, year] = dateStr.split('/');
+  const releaseDate = new Date(`20${year}`, month - 1, day);
+  const today = new Date();
+  const diffDays = (releaseDate - today) / (1000 * 60 * 60 * 24);
+  return diffDays > 0 && diffDays <= 7;
+}
+
+function isReleased(dateStr) {
+  if (!dateStr) return false;
+  const [day, month, year] = dateStr.split('/');
+  const releaseDate = new Date(`20${year}`, month - 1, day);
+  const today = new Date();
+  // Clear time parts so comparison is date-only
+  releaseDate.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  return releaseDate <= today;
+}
+
+function play(p) {
+  // Hide all players first
+  products.forEach(prod => {
+    const audioElem = document.getElementById(`audio-player-${prod.id}`);
+    const ytElem = document.getElementById(`youtube-player-${prod.id}`);
+    if (audioElem) {
+      audioElem.pause();
+      audioElem.style.display = 'none';
+      audioElem.src = '';
+    }
+    if (ytElem) {
+      ytElem.style.display = 'none';
+      ytElem.src = '';
+    }
+  });
+
+  const audio = document.getElementById(`audio-player-${p.id}`);
+  const yt = document.getElementById(`youtube-player-${p.id}`);
+
+  if (p.youtube) {
+    yt.src = `https://www.youtube.com/embed/${p.youtube}?autoplay=1&rel=0`;
+    yt.style.display = 'block';
+    yt.style.height = '200px';
+    yt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else if (p.audio) {
+    audio.src = p.audio;
+    audio.style.display = 'block';
+    setTimeout(() => {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => console.log('Autoplay failed:', err));
+      }
+    }, 300);
+    audio.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    alert('No preview available.');
+  }
+}
+
+    // Filtering function considering text search and genre filter
+
+function filterProducts() {
+  const searchTerm = document.getElementById('search-box').value.toLowerCase();
+  const genreTerm = document.getElementById('genre-filter').value;
+
+  let filtered = products.filter(p => {
+    const matchesSearch = p.track.toLowerCase().includes(searchTerm) || p.artist.toLowerCase().includes(searchTerm);
+    const matchesGenre = genreTerm === '' || p.genre === genreTerm;
+    const isLive = isReleased(p.releaseDate);
+    const isSoon = isComingSoon(p.releaseDate);
+    return matchesSearch && matchesGenre && (isLive || isSoon);
+  });
+
+  // Sort: Coming Soon first, then New Release, then others
+  filtered.sort((a, b) => {
+    const aSoon = isComingSoon(a.releaseDate);
+    const bSoon = isComingSoon(b.releaseDate);
+    const aNew = isNewRelease(a.releaseDate);
+    const bNew = isNewRelease(b.releaseDate);
+
+    // Priority: Coming Soon > New Release > others
+    if (aSoon && !bSoon) return -1;
+    if (!aSoon && bSoon) return 1;
+    if (aNew && !bNew) return -1;
+    if (!aNew && bNew) return 1;
+    return 0; // fallback: keep original order
+  });
+
+  displayProducts(filtered);
+}
+
+    document.getElementById('search-box').addEventListener('input', filterProducts);
+    document.getElementById('genre-filter').addEventListener('change', filterProducts);
+
+    loadProducts().then(() => {
+      filterProducts(); // Show all initially
+      const params = new URLSearchParams(window.location.search);
+      const sku = params.get('sku');
+      if (sku) {
+        const match = products.find(p => p.id.toLowerCase() === sku.toLowerCase());
+        if (match) play(match);
+      }
+    });
+  </script>
+
+</body>
+</html>

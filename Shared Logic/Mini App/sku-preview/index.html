@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recent Releases</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Source Sans Pro', sans-serif;
+      margin: 20px;
+    }
+    .item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      border: 2px solid transparent;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background: #222;
+      transition: border-color 0.3s ease;
+    }
+    .genre-electric-blue { border-color: #00aaff; }
+    .genre-electric-pink { border-color: #ff69b4; }
+    .genre-tech { border-color: #800080; }
+    .genre-hard { border-color: #ff6600; }
+    .item img {
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .item-details { flex: 1; }
+    .item-details h3 {
+      margin: 0 0 5px;
+      font-weight: 600;
+      font-size: 20px;
+    }
+    .item-details p {
+      margin: 4px 0;
+      font-size: 15px;
+      color: #ccc;
+    }
+    button, .button {
+      padding: 8px 14px;
+      margin-top: 10px;
+      background: #1e90ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, .button:hover { background: #0c67d1; }
+    .player-container {
+      width: 360px;
+      flex-shrink: 0;
+    }
+    audio {
+      width: 100%;
+      display: none;
+      margin-bottom: 10px;
+    }
+    iframe {
+      width: 100%;
+      height: 200px;
+      display: none;
+      border: none;
+      border-radius: 6px;
+    }
+.genre-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #444;
+  color: #fff;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+.genre-electric-blue .genre-tag { background: #00aaff; }
+.genre-electric-pink .genre-tag { background: #ff69b4; }
+.genre-tech .genre-tag { background: #800080; }
+.genre-hard .genre-tag { background: #ff6600; }
+.item {
+  position: relative;
+}
+
+    @media (max-width: 768px) {
+      .item {
+        flex-direction: column;
+      }
+      .player-container {
+        order: -1;
+        width: 100% !important;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        padding-right: 10px;
+      }
+      .item img {
+        width: 100%;
+        height: auto;
+        margin-bottom: 10px;
+      }
+      .player-container audio {
+        width: 100% !important;
+        max-width: 100%;
+      }
+.view-all-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #1e90ff;
+  color: white;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-all-btn:hover {
+  background: #0c67d1;
+}
+    }
+  </style>
+</head>
+<body>
+
+<h1>Forthcoming & Latest Releases</h1>
+
+  <div id="product-list"></div>
+
+<a href="https://industry-music.com/music" target="_top" class="button view-all-btn">View All Products</a>
+
+
+  <script>
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOkoLqcOywo_NTtJ4klohydC310Ak6tzu3twz_hP7i2QzQZaMGJgLPOS7nqrIrQm2SFQIHBOv0OiSK/pub?gid=0&single=true&output=csv';
+    
+    let products = [];
+
+    async function loadProducts() {
+      const res = await fetch(sheetUrl);
+      const text = await res.text();
+      const rows = text.trim().split('\n').slice(1);
+      products = rows.map(r => {
+        const [id, artist, track, version, artwork, youtube, audio, price, link, releaseDate, genre, bpm] = r.split(',');
+        return { id, artist, track, version, artwork, youtube, audio, price, link, releaseDate, genre, bpm };
+      });
+
+  products = products.filter(p => {
+    return isNewRelease(p.releaseDate) || isComingSoon(p.releaseDate);
+  });
+
+      // Sort newest to oldest by release date
+      products.sort((a, b) => {
+        const [da, ma, ya] = a.releaseDate.split('/');
+        const [db, mb, yb] = b.releaseDate.split('/');
+        const dateA = new Date(`20${ya}`, ma - 1, da);
+        const dateB = new Date(`20${yb}`, mb - 1, db);
+        return dateB - dateA;
+      });
+
+      const recent = products.slice(0, 4); // Show only most recent 4
+      displayProducts(recent);
+    }
+
+    function genreClass(genre) {
+      switch(genre) {
+        case 'Electric Blue': return 'genre-electric-blue';
+        case 'Electric Pink': return 'genre-electric-pink';
+        case 'Tech': return 'genre-tech';
+        case 'Hard': return 'genre-hard';
+        default: return '';
+      }
+    }
+
+function isNewRelease(dateStr) {
+  if (!dateStr) return false;
+  const [day, month, year] = dateStr.split('/');
+  const releaseDate = new Date(`20${year}`, month - 1, day);
+  const today = new Date();
+  const diffDays = (today - releaseDate) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 20;  // includes today
+}
+
+function isComingSoon(dateStr) {
+  if (!dateStr) return false;
+  const [day, month, year] = dateStr.split('/');
+  const releaseDate = new Date(`20${year}`, month - 1, day);
+  const today = new Date();
+  const diffDays = (releaseDate - today) / (1000 * 60 * 60 * 24);
+  return diffDays > 0 && diffDays <= 7; // coming in next 7 days
+}
+
+function displayProducts(items) {
+  const container = document.getElementById('product-list');
+  container.innerHTML = '';
+  items.forEach(p => {
+    const comingSoon = isComingSoon(p.releaseDate);
+    const newRelease = isNewRelease(p.releaseDate);
+    const releaseLabel = comingSoon
+      ? '<strong style="color: #ff0;">COMING SOON</strong>'
+      : newRelease
+      ? '<strong style="color: #0f0;">NEW RELEASE</strong>'
+      : '';
+
+    const selectBtnHtml = comingSoon ? '' : `<a href="${p.link}" target="_blank" class="button">Select</a>`;
+
+    const div = document.createElement('div');
+    div.className = 'item ' + genreClass(p.genre);
+    div.innerHTML = `
+      <div class="genre-tag">${p.genre}</div>
+      <img src="${p.artwork}" alt="${p.track}" />
+      <div class="item-details">
+        <h3>${p.artist} – ${p.track}</h3>
+        <p><strong>Version:</strong> ${p.version}</p>
+        <p><strong>BPM:</strong> ${p.bpm || '–'}</p>
+        <p><strong>Price:</strong> ${p.price}</p>
+        <p><strong>Release Date:</strong> ${p.releaseDate || '–'} ${releaseLabel}</p>
+        <button data-id="${p.id}">Play Sample</button>
+        ${selectBtnHtml}
+      </div>
+      <div class="player-container">
+        <audio id="audio-player-${p.id}" controls></audio>
+        <iframe id="youtube-player-${p.id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+    `;
+
+    const playBtn = div.querySelector('button');
+    playBtn.addEventListener('click', () => play(p));
+
+    container.appendChild(div);
+  });
+}
+    function play(p) {
+      products.forEach(prod => {
+        const audioElem = document.getElementById(`audio-player-${prod.id}`);
+        const ytElem = document.getElementById(`youtube-player-${prod.id}`);
+        if (audioElem) {
+          audioElem.pause();
+          audioElem.style.display = 'none';
+          audioElem.src = '';
+        }
+        if (ytElem) {
+          ytElem.style.display = 'none';
+          ytElem.src = '';
+        }
+      });
+
+      const audio = document.getElementById(`audio-player-${p.id}`);
+      const yt = document.getElementById(`youtube-player-${p.id}`);
+
+      if (p.youtube) {
+        yt.src = `https://www.youtube.com/embed/${p.youtube}?autoplay=1&rel=0`;
+        yt.style.display = 'block';
+        yt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (p.audio) {
+        audio.src = p.audio;
+        audio.style.display = 'block';
+        setTimeout(() => {
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(err => console.log('Autoplay failed:', err));
+          }
+        }, 300);
+        audio.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert('No preview available.');
+      }
+    }
+
+    loadProducts();
+  </script>
+
+</body>
+</html>
